@@ -103,6 +103,15 @@ def get_tensors_by_embedding_id(embedding_id: str) -> List[Any]:
         .all()
     )
 
+def get_reduced_tensors_by_embedding_id(embedding_id: str) -> List[Any]:
+    return (
+        session.query(
+            cast(models.EmbeddingTensor.record_id, TEXT),
+            models.EmbeddingTensor.data_reduced,
+        )
+        .filter(models.EmbeddingTensor.embedding_id == embedding_id)
+        .all()
+    )
 
 def get_record_ids_by_embedding_id(embedding_id: str) -> List[str]:
     record_ids = (
@@ -117,6 +126,18 @@ def get_tensors_by_record_ids(embedding_id: str, record_ids: List[str]) -> List[
     return (
         session.query(
             cast(models.EmbeddingTensor.record_id, TEXT), models.EmbeddingTensor.data
+        )
+        .filter(
+            models.EmbeddingTensor.embedding_id == embedding_id,
+            models.EmbeddingTensor.record_id.in_(record_ids),
+        )
+        .all()
+    )
+
+def get_reduced_tensors_by_record_ids(embedding_id: str, record_ids: List[str]) -> List[Any]:
+    return (
+        session.query(
+            cast(models.EmbeddingTensor.record_id, TEXT), models.EmbeddingTensor.data_reduced
         )
         .filter(
             models.EmbeddingTensor.embedding_id == embedding_id,
@@ -211,6 +232,7 @@ def create_tensor(
     record_id: str,
     embedding_id: str,
     data: List[float],
+    data_reduced: List[float],
     with_commit: bool = False,
 ) -> EmbeddingTensor:
     embedding_tensor: EmbeddingTensor = EmbeddingTensor(
@@ -218,6 +240,7 @@ def create_tensor(
         record_id=record_id,
         embedding_id=embedding_id,
         data=data,
+        data_reduced=data_reduced,
     )
     general.add(embedding_tensor, with_commit)
     return embedding_tensor
@@ -228,6 +251,7 @@ def create_tensors(
     embedding_id: str,
     record_ids: List[str],
     tensors: List[List[float]],
+    reduced_tensors: List[List[float]],
     with_commit: bool = False,
 ) -> None:
     tensors = [
@@ -236,8 +260,9 @@ def create_tensors(
             record_id=record_id,
             embedding_id=embedding_id,
             data=tensor,
+            data_reduced=reduced_tensor,
         )
-        for record_id, tensor in zip(record_ids, tensors)
+        for record_id, tensor, reduced_tensor in zip(record_ids, tensors, reduced_tensors)
     ]
     general.add_all(tensors, with_commit)
 

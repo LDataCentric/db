@@ -590,6 +590,7 @@ class EmbeddingTensor(Base):
         index=True,
     )
     data = Column(JSON)
+    data_reduced = Column(JSON)
 
 
 # -------------------- INFORMATION_INTEGRATION_ --------------------
