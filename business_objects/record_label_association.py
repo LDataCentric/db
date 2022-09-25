@@ -1,3 +1,4 @@
+import json
 import time
 from datetime import datetime
 from typing import List, Dict, Optional, Any, Tuple
@@ -239,6 +240,7 @@ def create(
     tokens: Optional[List] = None,
     source_id: Optional[str] = None,
     confidence: Optional[float] = None,
+    shap: Optional[List[Dict[str, Any]]] = None,
     created_at: Optional[datetime] = None,
     weak_supervision_id: Optional[str] = None,
     is_valid_manual_label: Optional[bool] = None,
@@ -259,6 +261,8 @@ def create(
         association.source_id = source_id
     if confidence:
         association.confidence = confidence
+    if shap:
+        association.shap = shap
     if created_at:
         association.created_at = created_at
     if weak_supervision_id:

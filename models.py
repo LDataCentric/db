@@ -487,6 +487,7 @@ class RecordLabelAssociation(Base):
     source_type = Column(String)
     return_type = Column(String)  # e.g. YIELD, RETURN
     confidence = Column(Float)
+    shap = Column(JSON)
 
     created_at = Column(DateTime, default=sql.func.now())
     created_by = Column(
