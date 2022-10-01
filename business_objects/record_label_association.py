@@ -113,6 +113,18 @@ def get_latest(project_id: str, top_n: int) -> List[RecordLabelAssociation]:
         .all()
     )
 
+def get_by_source_type(
+    project_id: str, source_type: str
+) -> List[RecordLabelAssociation]:
+    return (
+        session.query(RecordLabelAssociation)
+        .filter(
+            RecordLabelAssociation.project_id == project_id,
+            RecordLabelAssociation.source_type == source_type,
+        )
+        .all()
+    )
+
 
 def get_manual_records(project_id: str, labeling_task_id: str) -> List[str]:
     query = f"""
