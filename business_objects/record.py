@@ -405,6 +405,12 @@ def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     )
     general.flush_or_commit(with_commit)
 
+def delete_records(project_id: str, record_ids: List[str], with_commit: bool = False) -> None:
+    session.query(Record).filter(
+        Record.project_id == project_id, Record.id.in_(record_ids)
+    ).delete(synchronize_session=False)
+    general.flush_or_commit(with_commit)
+
 
 def delete_all(project_id: str, with_commit: bool = False) -> None:
     session.query(Record).filter(Record.project_id == project_id).delete()
