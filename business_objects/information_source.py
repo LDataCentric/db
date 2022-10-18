@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
+from submodules.model import enums
+
 from . import general
 from .. import InformationSourceStatisticsExclusion
 from ..models import (
@@ -17,6 +19,17 @@ def get(project_id: str, source_id: str) -> InformationSource:
         .filter(
             InformationSource.project_id == project_id,
             InformationSource.id == source_id,
+        )
+        .first()
+    )
+
+
+def get_by_name(project_id: str, name: str) -> InformationSource:
+    return (
+        session.query(InformationSource)
+        .filter(
+            InformationSource.project_id == project_id,
+            InformationSource.name == name,
         )
         .first()
     )
@@ -148,6 +161,18 @@ def get_zero_shot_is_data(project_id: str, information_source_id: str) -> Any:
     return general.execute_first(sql)
 
 
+def get_first_crowd_is_for_annotator(project_id: str, annotator_id: str) -> str:
+    query = f"""
+    SELECT _is.id::TEXT
+    FROM information_source _is
+    WHERE _is.project_id = '{project_id}' AND _is."type" = '{enums.InformationSourceType.CROWD_LABELER.value}'
+    AND _is.source_code::JSON ->>'annotator_id' = '{annotator_id}'
+    """
+    v = general.execute_first(query)
+    if v:
+        return v[0]
+
+
 def get_exclusion_record_ids(source_id: str) -> List[str]:
     exclusions = (
         session.query(InformationSourceStatisticsExclusion.record_id).filter(
@@ -168,7 +193,13 @@ def get_exclusion_record_ids_for_task(task_id: str) -> List[str]:
     return exclusion_ids
 
 
-def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
+def get_overview_data(
+    project_id: str, is_model_callback: bool = False
+) -> List[Dict[str, Any]]:
+    if is_model_callback:
+        type_selection = " = 'MODEL_CALLBACK'"
+    else:
+        type_selection = " != 'MODEL_CALLBACK'"
     query = f"""
     SELECT array_agg(row_to_json(data_select))
     FROM (
@@ -205,6 +236,7 @@ def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
             GROUP BY source_id) stats
             ON _is.id = stats.source_id
         WHERE _is.project_id = '{project_id}'
+        AND _is.type {type_selection}
         ORDER BY "createdAt" DESC,name
         )data_select """
     values = general.execute_first(query)
@@ -212,7 +244,8 @@ def get_overview_data(project_id: str) -> List[Dict[str, Any]]:
     if values:
         return values[0]
 
-def continue_payload(project_id:str,source_id:str,payload_id:str)->bool:
+
+def continue_payload(project_id: str, source_id: str, payload_id: str) -> bool:
     query = f"""
     SELECT isp.state
     FROM information_source_payload isp
@@ -223,7 +256,7 @@ def continue_payload(project_id:str,source_id:str,payload_id:str)->bool:
     AND isp.project_id = '{project_id}' """
 
     value = general.execute_first(query)
-    if not value or value[0]!= "CREATED":
+    if not value or value[0] != "CREATED":
         return False
     return True
 
@@ -341,7 +374,7 @@ def update(
     created_at: Optional[datetime] = None,
     created_by: Optional[str] = None,
     with_commit: bool = False,
-) -> None:
+) -> InformationSource:
     information_source = get(project_id, source_id)
 
     if labeling_task_id is not None:
@@ -365,6 +398,7 @@ def update(
     if created_by is not None:
         information_source.created_at = created_by
     general.flush_or_commit(with_commit)
+    return information_source
 
 
 def update_payload(
@@ -444,8 +478,16 @@ def update_quantity_stats(
 
 
 def update_is_selected_for_project(
-    project_id: str, update_value: bool, with_commit: bool = False
+    project_id: str,
+    update_value: bool,
+    with_commit: bool = False,
+    is_model_callback: bool = False,
 ) -> None:
+
+    if is_model_callback:
+        type_selection = " = 'MODEL_CALLBACK'"
+    else:
+        type_selection = " != 'MODEL_CALLBACK'"
     if update_value:
         str_value = "TRUE"
     else:
@@ -454,7 +496,9 @@ def update_is_selected_for_project(
     query = f"""
     UPDATE information_source
     SET is_selected = {str_value}
-    WHERE project_id = '{project_id}' """
+    WHERE project_id = '{project_id}'
+    AND type {type_selection}
+    """
     general.execute(query)
     general.flush_or_commit(with_commit)
 

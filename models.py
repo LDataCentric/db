@@ -1,3 +1,4 @@
+from re import T
 import uuid
 
 from .enums import (
@@ -8,6 +9,8 @@ from .enums import (
     UploadStates,
     PayloadState,
     SliceTypes,
+    UserRoles,
+    AttributeState,
 )
 from sqlalchemy import (
     JSON,
@@ -73,10 +76,48 @@ def parent_to_child_relationship(
 
 
 # -------------------- GLOBAL_ --------------------
+class AppVersion(Base):
+    __tablename__ = Tablenames.APP_VERSION.value
+    service = Column(String, primary_key=True)
+    installed_version = Column(String)  # local/installed Tag
+    remote_version = Column(String)  # latest GitHub Tag
+    last_checked = Column(DateTime)
+
+
+class CommentData(Base):
+    __tablename__ = Tablenames.COMMENT_DATA.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    # no foreign key since its a multi field
+    xfkey = Column(UUID(as_uuid=True), index=True)
+    # of type CommentCategory e.g. USER
+    xftype = Column(String, index=True)
+    # key for e.g. multiple comments on a single user
+    order_key = Column(Integer, autoincrement=True)
+    comment = Column(String)
+    is_markdown = Column(Boolean, default=False)
+    is_private = Column(Boolean, default=False)
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
 class Organization(Base):
     __tablename__ = Tablenames.ORGANIZATION.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, unique=True)
+    # when did the company start using the app (trail time start)
+    started_at = Column(DateTime)
+    # database entry
+    is_paying = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=sql.func.now())
 
     projects = parent_to_child_relationship(
         Tablenames.ORGANIZATION,
@@ -96,6 +137,7 @@ class User(Base):
         ForeignKey(f"{Tablenames.ORGANIZATION.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    role = Column(String, default=UserRoles.ENGINEER.value)  # enum UserRoles
     notifications = parent_to_child_relationship(
         Tablenames.USER,
         Tablenames.NOTIFICATION,
@@ -127,6 +169,45 @@ class User(Base):
         Tablenames.PROJECT,
         order_by="created_at.desc()",
     )
+    comments = parent_to_child_relationship(
+        Tablenames.USER,
+        Tablenames.COMMENT_DATA,
+        order_by="created_at.desc()",
+    )
+
+
+class LabelingAccessLink(Base):
+    __tablename__ = Tablenames.LABELING_ACCESS_LINK.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    # router link without domain e.g. /app/projects/399d9a46-1f7f-4781-aafb-2af0f4a017e5/labeling/81c74109-0f6d-491d-ac33-6e83f6c011e5?pos=1&type=SESSION
+    link = Column(String)
+
+    # as own ids not a combined one to leverage cascade behaviour
+    data_slice_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.DATA_SLICE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    heuristic_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.INFORMATION_SOURCE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    link_type = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+    created_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    is_locked = Column(Boolean, default=False)
+    # corresponding data last changed at (e.g. if a data slice was updated or the heuristic was updated)
+    changed_at = Column(DateTime, default=sql.func.now())
 
 
 class UserActivity(Base):
@@ -279,6 +360,15 @@ class Attribute(Base):
     data_type = Column(String)
     is_primary_key = Column(Boolean, default=False)
     relative_position = Column(Integer)
+    user_created = Column(Boolean, default=False)
+    source_code = Column(String)
+    state = Column(String, default=AttributeState.UPLOADED.value)
+    logs = Column(ARRAY(String))
+
+    embeddings = parent_to_child_relationship(
+        Tablenames.ATTRIBUTE,
+        Tablenames.EMBEDDING,
+    )
 
     labeling_tasks = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
@@ -548,7 +638,6 @@ class RecordAttributeTokenStatistics(Base):
     num_token = Column(Integer)
 
 
-# -------------------- EMBEDDING_ --------------------
 class Embedding(Base):
     __tablename__ = Tablenames.EMBEDDING.value
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -556,6 +645,10 @@ class Embedding(Base):
         UUID(as_uuid=True),
         ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
         index=True,
+    )
+    attribute_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ATTRIBUTE.value}.id", ondelete="CASCADE"),
     )
     name = Column(String)
     custom = Column(

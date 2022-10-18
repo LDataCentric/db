@@ -1,8 +1,9 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Tuple
 from sqlalchemy import cast, Text
+from sqlalchemy.orm.attributes import flag_modified
 
-from . import general
+from . import attribute, general
 from .. import models, enums
 from ..models import (
     Record,
@@ -87,6 +88,7 @@ def get_missing_rats_records(
     project_id: str, limit: int, attribute_id: str
 ) -> List[Any]:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
+    attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
         attribute_add += f" AND att.id = '{attribute_id}'"
     query = f"""
@@ -162,6 +164,42 @@ def get_token_statistics_by_project_id(project_id: str) -> List[Any]:
         ;
         """
     return general.execute_all(query)
+
+
+def get_attribute_calculation_sample_records(project_id: str, n: int = 10) -> List[Any]:
+    query = f"""
+        SELECT record.id::TEXT, record."data"
+        FROM record
+        INNER JOIN record_tokenized rt
+            ON record.id = rt.record_id AND record.project_id = rt.project_id
+        WHERE record.project_id='{project_id}' AND record.category = '{enums.RecordCategory.SCALE.value}'
+        ORDER BY RANDOM()
+        LIMIT {n}
+        """
+    return general.execute_all(query)
+
+
+def get_missing_columns_str(project_id: str) -> str:
+    query = f"""
+    SELECT att.name
+    FROM attribute att
+    LEFT JOIN (
+        SELECT unnest(columns) col, project_id
+        FROM (
+            SELECT columns, project_id
+            FROM record_tokenized rt
+            WHERE rt.project_id = '{project_id}'
+            LIMIT 1 
+        ) i
+    ) used_attributes
+        ON att.project_id = used_attributes.project_id AND att.name = used_attributes.col
+    WHERE att.project_id = '{project_id}' AND used_attributes.project_id IS NULL
+    AND att.state IN ('{enums.AttributeState.UPLOADED.value}','{enums.AttributeState.USABLE.value}','{enums.AttributeState.AUTOMATICALLY_CREATED.value}')
+    """
+    missing_columns = general.execute_all(query)
+    if not missing_columns:
+        return ""
+    return ",\n".join([f"'{k[0]}',r.data->'{k[0]}'" for k in missing_columns])
 
 
 def get_zero_shot_n_random_records(
@@ -246,6 +284,7 @@ def count_by_project_and_source(
 # rats = record_attribute_token_statistics
 def count_missing_rats_records(project_id: str, attribute_id: str) -> int:
     attribute_add = f"AND att.data_type = '{enums.TokenizerTask.TYPE_TEXT.value}'"
+    attribute_add += f"AND att.state IN ('{enums.AttributeState.UPLOADED.value}', '{enums.AttributeState.USABLE.value}', '{enums.AttributeState.RUNNING.value}')"
     if attribute_id:
         attribute_add += f" AND att.id = '{attribute_id}'"
     query = f"""
@@ -276,6 +315,16 @@ def count_missing_tokenized_records(project_id: str) -> int:
         AND rt.project_id = '{project_id}'
     WHERE r.project_id = '{project_id}' 
     AND rt.id IS NULL    
+    """
+    result = general.execute_first(query)
+    return result.c
+
+
+def count_tokenized_records(project_id: str) -> int:
+    query = f"""
+    SELECT COUNT(*) c
+    FROM record_tokenized rt
+    WHERE rt.project_id = '{project_id}'
     """
     result = general.execute_first(query)
     return result.c
@@ -397,6 +446,22 @@ def update_records(
     )
 
 
+def update_add_user_created_attribute(
+    project_id: str,
+    attribute_id: str,
+    calculated_attributes: Dict[str, str],
+    with_commit: bool = False,
+) -> None:
+    attribute_item = attribute.get(project_id, attribute_id)
+    for i, (record_id, attribute_value) in enumerate(calculated_attributes.items()):
+        record_item = get(project_id=project_id, record_id=record_id)
+        record_item.data[attribute_item.name] = attribute_value
+        flag_modified(record_item, "data")
+        if (i + 1) % 1000 == 0:
+            general.flush_or_commit(with_commit)
+    general.flush_or_commit(with_commit)
+
+
 def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     session.delete(
         session.query(Record)
@@ -414,6 +479,23 @@ def delete_records(project_id: str, record_ids: List[str], with_commit: bool = F
 
 def delete_all(project_id: str, with_commit: bool = False) -> None:
     session.query(Record).filter(Record.project_id == project_id).delete()
+    general.flush_or_commit(with_commit)
+
+
+def delete_user_created_attribute(
+    project_id: str, attribute_id: str, with_commit: bool = False
+) -> None:
+    attribute_item = attribute.get(project_id, attribute_id)
+
+    if not attribute_item.user_created:
+        return
+
+    record_items = get_all(project_id=project_id)
+    for i, record_item in enumerate(record_items):
+        del record_item.data[attribute_item.name]
+        flag_modified(record_item, "data")
+        if (i + 1) % 1000 == 0:
+            general.flush_or_commit(with_commit)
     general.flush_or_commit(with_commit)
 
 

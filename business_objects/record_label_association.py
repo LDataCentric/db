@@ -42,6 +42,23 @@ def get_all_with_filter(
     )
 
 
+def check_any_id_is_source_related(
+    project_id: str, record_id: str, association_ids: List[str]
+) -> List[str]:
+    query = f"""
+    SELECT array_agg(source_id::TEXT)
+    FROM record_label_association
+    WHERE project_id = '{project_id}'
+    AND record_id = '{record_id}'
+    AND id IN ('{"', '".join(association_ids)}')
+    AND source_type = '{enums.LabelSource.INFORMATION_SOURCE.value}'
+    """
+    values = general.execute_first(query)
+    if values:
+        return values[0]
+    return []
+
+
 def get_project_ids_with_rlas() -> List[Any]:
     query = f"""
     SELECT project_id::TEXT
@@ -91,6 +108,32 @@ def get_tokens(project_id: str) -> List[Any]:
         ;
         """
     return general.execute_all(query)
+
+
+def get_manual_tokens_by_record_id(
+    project_id: str,
+    record_id: str,
+) -> List[RecordLabelAssociationToken]:
+    return (
+        session.query(RecordLabelAssociationToken)
+        .join(
+            RecordLabelAssociation,
+            (
+                RecordLabelAssociation.id
+                == RecordLabelAssociationToken.record_label_association_id
+            )
+            & (
+                RecordLabelAssociationToken.project_id
+                == RecordLabelAssociation.project_id
+            ),
+        )
+        .filter(
+            RecordLabelAssociation.record_id == record_id,
+            RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value,
+            RecordLabelAssociation.project_id == project_id,
+        )
+        .all()
+    )
 
 
 def get_all(project_id: str) -> List[RecordLabelAssociation]:
@@ -490,6 +533,20 @@ def delete_by_source_id(
     general.flush_or_commit(with_commit)
 
 
+def delete_by_source_id_and_record_ids(
+    project_id: str,
+    information_source_id: str,
+    record_ids: List[str],
+    with_commit: bool = False,
+) -> None:
+    session.query(RecordLabelAssociation).filter(
+        RecordLabelAssociation.project_id == project_id,
+        RecordLabelAssociation.source_id == information_source_id,
+        RecordLabelAssociation.record_id.in_(record_ids),
+    ).delete()
+    general.flush_or_commit(with_commit)
+
+
 def delete_record_label_associations(
     project_id: str, record_task_concatenation: str, with_commit: bool = False
 ) -> None:
@@ -518,13 +575,15 @@ def delete(
     user_id: str,
     label_ids: List[str],
     as_gold_star: Optional[bool] = None,
+    source_id: str = None,
+    source_type: str = enums.LabelSource.MANUAL.value,
     with_commit: bool = False,
 ) -> None:
     delete_query = session.query(RecordLabelAssociation).filter(
         RecordLabelAssociation.project_id == project_id,
         RecordLabelAssociation.record_id == record_id,
         RecordLabelAssociation.labeling_task_label_id.in_(label_ids),
-        RecordLabelAssociation.source_type == enums.LabelSource.MANUAL.value,
+        RecordLabelAssociation.source_type == source_type,
     )
     if as_gold_star:
         delete_query = delete_query.filter(RecordLabelAssociation.is_gold_star == True)
@@ -535,6 +594,10 @@ def delete(
                 RecordLabelAssociation.is_gold_star == False,
                 RecordLabelAssociation.is_gold_star == None,
             ),
+        )
+    if source_id:
+        delete_query = delete_query.filter(
+            RecordLabelAssociation.source_id == source_id
         )
     delete_query.delete(synchronize_session="fetch")
     general.flush_or_commit(with_commit)
@@ -868,3 +931,64 @@ def update_user_id_for_sample_project(
     """
     general.execute(query)
     general.flush_or_commit(with_commit)
+
+
+def get_percentage_of_labeled_records_for_slice(
+    project_id: str, annotator_id: str, slice_id: str, labeling_task_id: str
+) -> float:
+    query = get_percentage_of_labeled_records_for_slice_query(
+        project_id, annotator_id, slice_id, labeling_task_id
+    )
+    value = general.execute_first(query)
+    if not value:
+        return -1
+    return value[0]
+
+
+def get_percentage_of_labeled_records_for_slice_query(
+    project_id: str, annotator_id: str, slice_id: str, labeling_task_id: str
+) -> str:
+    return f"""
+    WITH label_data AS (
+        SELECT label_check.has_labels,COUNT(*) c
+        FROM record r
+        INNER JOIN data_slice_record_association dsra
+            ON r.id = dsra.record_id AND r.project_id = dsra.project_id AND dsra.data_slice_id = '{slice_id}'
+        INNER JOIN ( 
+            SELECT r.id record_id, CASE WHEN x.id IS NULL THEN 0 ELSE 1 END has_labels
+            FROM record r
+            LEFT JOIN LATERAL(
+                SELECT rla.id 
+                FROM record_label_association rla
+                INNER JOIN labeling_task_label ltl
+            	    ON rla.project_id = ltl.project_id AND rla.labeling_task_label_id = ltl.id AND ltl.labeling_task_id = '{labeling_task_id}'
+                WHERE r.id = rla.record_id
+                AND r.project_id = rla.project_id
+                AND rla.source_type = 'INFORMATION_SOURCE'
+                AND rla.created_by = '{annotator_id}' 
+                LIMIT 1
+            )x ON TRUE
+            WHERE r.project_id = '{project_id}'
+        ) label_check
+            ON r.id = label_check.record_id
+        WHERE r.project_id = '{project_id}'
+        GROUP BY label_check.has_labels )
+
+    SELECT has_labels.c / (has_labels.c + has_no_labels.c) percentage
+    FROM (
+        SELECT C::FLOAT
+        FROM label_data
+        WHERE has_labels = 1
+        UNION ALL
+        SELECT 0
+        LIMIT 1
+    ) has_labels,
+    (   SELECT c::FLOAT
+        FROM label_data
+        WHERE has_labels = 0			
+        UNION ALL
+        SELECT 0
+        LIMIT 1
+    )has_no_labels
+   
+    """

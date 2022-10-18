@@ -27,6 +27,7 @@ class LabelSource(Enum):
     # WEAK_SUPERVISION = Output of the Weak Supervision Model - ehemeals "programmatic"
     WEAK_SUPERVISION = "WEAK_SUPERVISION"
     INFORMATION_SOURCE = "INFORMATION_SOURCE"
+    MODEL_CALLBACK = "MODEL_CALLBACK"
 
 
 class InformationSourceType(Enum):
@@ -34,6 +35,7 @@ class InformationSourceType(Enum):
     ACTIVE_LEARNING = "ACTIVE_LEARNING"
     PRE_COMPUTED = "PRE_COMPUTED"
     ZERO_SHOT = "ZERO_SHOT"
+    CROWD_LABELER = "CROWD_LABELER"
 
 
 class InformationSourceReturnType(Enum):
@@ -53,8 +55,24 @@ class PayloadState(Enum):
     FINISHED = "FINISHED"
     FAILED = "FAILED"
 
+    # for crowd labelers, there is a slightly different state flow
+    STARTED = "STARTED"
+
+
+class UserRoles(Enum):
+    ENGINEER = "ENGINEER"
+    EXPERT = "EXPERT"
+    ANNOTATOR = "ANNOTATOR"
+
+
+class LinkTypes(Enum):
+    DATA_SLICE = "DATA_SLICE"
+    HEURISTIC = "HEURISTIC"
+    SESSION = "SESSION"
+
 
 class Tablenames(Enum):
+    APP_VERSION = "app_version"
     USER = "user"
     ORGANIZATION = "organization"
     PROJECT = "project"
@@ -83,6 +101,8 @@ class Tablenames(Enum):
     DATA_SLICE = "data_slice"
     DATA_SLICE_RECORD_ASSOCIATION = "data_slice_record_association"
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
+    COMMENT_DATA = "comment_data"
+    LABELING_ACCESS_LINK = "labeling_access_link"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs
@@ -97,6 +117,36 @@ class Tablenames(Enum):
                 for idx, word in enumerate(self.value.split("_"))
             ]
         )
+
+
+class CommentCategory(Enum):
+    UNKNOWN = "unknown"
+    LABELING_TASK = "LABELING_TASK"
+    RECORD = "RECORD"
+    ORGANIZATION = "ORGANIZATION"
+    ATTRIBUTE = "ATTRIBUTE"
+    USER = "USER"
+    EMBEDDING = "EMBEDDING"
+    HEURISTIC = "HEURISTIC"
+    DATA_SLICE = "DATA_SLICE"
+    KNOWLEDGE_BASE = "KNOWLEDGE_BASE"
+    LABEL = "LABEL"
+
+    def get_name_col(self):
+        if self == CommentCategory.USER:
+            return ""
+        if self == CommentCategory.RECORD:
+            return "'current'"
+        return "name"
+
+    def get_table_name(self):
+        if self == CommentCategory.USER:
+            return "public.user"
+        if self == CommentCategory.HEURISTIC:
+            return "information_source"
+        if self == CommentCategory.LABEL:
+            return "labeling_task_label"
+        return self.value.lower()
 
 
 class CascadeBehaviour(Enum):
@@ -185,6 +235,7 @@ class NotificationType(Enum):
     WEAK_SUPERVISION_TASK_STARTED = "WEAK_SUPERVISION_TASK_STARTED"
     WEAK_SUPERVISION_TASK_DONE = "WEAK_SUPERVISION_TASK_DONE"
     WEAK_SUPERVISION_TASK_FAILED = "WEAK_SUPERVISION_TASK_FAILED"
+
     INFORMATION_SOURCE_STARTED = "INFORMATION_SOURCE_STARTED"
     INFORMATION_SOURCE_PREPARATION_STARTED = "INFORMATION_SOURCE_PREPARATION_STARTED"
     INFORMATION_SOURCE_COMPLETED = "INFORMATION_SOURCE_COMPLETED"
@@ -272,4 +323,13 @@ class EmbeddingState(Enum):
     WAITING = "WAITING"
     ENCODING = "ENCODING"
     FINISHED = "FINISHED"
+    FAILED = "FAILED"
+
+
+class AttributeState(Enum):
+    UPLOADED = "UPLOADED"
+    AUTOMATICALLY_CREATED = "AUTOMATICALLY_CREATED"
+    INITIAL = "INITIAL"
+    RUNNING = "RUNNING"
+    USABLE = "USABLE"
     FAILED = "FAILED"

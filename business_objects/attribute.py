@@ -1,9 +1,9 @@
 from typing import Dict, Any, List, Optional
-
 from sqlalchemy import func
+from sqlalchemy.orm.attributes import flag_modified
 
 from . import general
-from ..enums import DataTypes, RecordCategory
+from ..enums import AttributeState, DataTypes, RecordCategory
 from ..models import Attribute
 from ..session import session
 
@@ -39,27 +39,74 @@ def get_by_name(project_id: str, name: str) -> Attribute:
     )
 
 
-def get_all(project_id: str) -> List[Attribute]:
-    return session.query(Attribute).filter(Attribute.project_id == project_id).all()
-
-
-def get_attribute_ids(project_id: str) -> Dict[str, str]:
-    attributes: List[Attribute] = get_all(project_id)
-    return {attribute.name: attribute.id for attribute in attributes}
-
-
-def get_text_attributes(project_id: str) -> Dict[str, str]:
-    text_attributes = (
+def get_all_by_names(project_id: str, attribute_names: List[str]) -> List[Attribute]:
+    return (
         session.query(Attribute)
-        .filter(Attribute.project_id == project_id, Attribute.data_type == "TEXT")
+        .filter(
+            Attribute.project_id == project_id,
+            Attribute.name.in_(attribute_names),
+        )
         .all()
     )
 
+
+def get_all(
+    project_id: Optional[str] = None,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
+    ],
+) -> List[Attribute]:
+    query = session.query(Attribute)
+    if project_id:
+        query = query.filter(Attribute.project_id == project_id)
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
+    return query.all()
+
+
+def get_attribute_ids(
+    project_id: str,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
+    ],
+) -> Dict[str, str]:
+    attributes: List[Attribute] = get_all(project_id, state_filter)
+    return {attribute.name: attribute.id for attribute in attributes}
+
+
+def get_text_attributes(
+    project_id: str,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
+    ],
+) -> Dict[str, str]:
+    query = session.query(Attribute).filter(
+        Attribute.project_id == project_id, Attribute.data_type == "TEXT"
+    )
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
+    text_attributes = query.all()
     return {att.name: str(att.id) for att in text_attributes}
 
 
-def get_all_ordered(project_id: str, order_asc: bool) -> List[Attribute]:
+def get_all_ordered(
+    project_id: str,
+    order_asc: bool,
+    state_filter: List[str] = [
+        AttributeState.UPLOADED.value,
+        AttributeState.USABLE.value,
+        AttributeState.AUTOMATICALLY_CREATED.value,
+    ],
+) -> List[Attribute]:
     query = session.query(Attribute).filter(Attribute.project_id == project_id)
+    if state_filter:
+        query = query.filter(Attribute.state.in_(state_filter))
     if order_asc:
         query = query.order_by(Attribute.relative_position.asc())
     else:
@@ -98,7 +145,11 @@ def create(
     name: str,
     relative_position: int,
     data_type: str = DataTypes.CATEGORY.value,
-    is_primary_key: Optional[bool] = False,
+    is_primary_key: bool = False,
+    user_created: bool = False,
+    source_code: Optional[str] = None,
+    state: Optional[str] = None,
+    logs: Optional[List[str]] = None,
     with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = Attribute(
@@ -107,7 +158,18 @@ def create(
         data_type=data_type,
         is_primary_key=is_primary_key,
         relative_position=relative_position,
+        user_created=user_created,
     )
+
+    if source_code is not None:
+        attribute.source_code = source_code
+
+    if state is not None:
+        attribute.state = state
+
+    if logs is not None:
+        attribute.logs = logs
+
     general.add(attribute, with_commit)
     return attribute
 
@@ -115,13 +177,28 @@ def create(
 def update(
     project_id: str,
     attribute_id: str,
-    data_type: str,
-    is_primary_key: bool,
+    data_type: Optional[str] = None,
+    is_primary_key: Optional[bool] = None,
+    name: Optional[str] = None,
+    source_code: Optional[str] = None,
+    state: Optional[str] = None,
+    logs: Optional[List[str]] = None,
     with_commit: bool = False,
 ) -> Attribute:
     attribute: Attribute = get(project_id, attribute_id)
-    attribute.data_type = data_type
-    attribute.is_primary_key = is_primary_key
+    if data_type is not None:
+        attribute.data_type = data_type
+    if is_primary_key is not None:
+        attribute.is_primary_key = is_primary_key
+    if name is not None:
+        attribute.name = name
+    if source_code is not None:
+        attribute.source_code = source_code
+    if state is not None:
+        attribute.state = state
+    if logs is not None:
+        attribute.logs = logs
+        flag_modified(attribute, "logs")
     general.flush_or_commit(with_commit)
     return attribute
 
@@ -218,7 +295,7 @@ def __build_add_query(
     WHERE record.project_id = '{project_id}' AND record.id = helper.id;
 
     INSERT INTO attribute
-    VALUES (uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING),'{project_id}','{attribute_name}','INTEGER',TRUE,0);
+    VALUES (uuid_in(md5(random()::TEXT || clock_timestamp()::TEXT)::CSTRING),'{project_id}','{attribute_name}','INTEGER',TRUE,0,FALSE,NULL,'{AttributeState.AUTOMATICALLY_CREATED.value}',NULL);
 
     UPDATE attribute
     SET relative_position = rPos
