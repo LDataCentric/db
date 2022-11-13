@@ -1,5 +1,12 @@
 from enum import Enum
 
+class FileExtensions(Enum):
+    """
+    Enum for file extensions
+    """
+    AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'aiff', 'alac']
+    IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tiff', 'tif', 'svg']
+    VIDEO_EXTENSIONS = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'vob', 'ogv']
 
 class DataTypes(Enum):
     INTEGER = "INTEGER"
@@ -8,6 +15,10 @@ class DataTypes(Enum):
     CATEGORY = "CATEGORY"
     TEXT = "TEXT"
     UNKNOWN = "UNKNOWN"
+    TIMESERIES = "TIMESERIES"
+    AUDIO = "AUDIO"
+    IMAGE = "IMAGE"
+    VIDEO = "VIDEO"
 
 
 class ProjectStatus(Enum):
