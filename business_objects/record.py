@@ -1,6 +1,6 @@
 from __future__ import with_statement
 from typing import List, Dict, Any, Tuple
-from sqlalchemy import cast, Text
+from sqlalchemy import cast, Text, JSON, text
 from sqlalchemy.orm.attributes import flag_modified
 
 from . import attribute, general
@@ -13,6 +13,7 @@ from ..models import (
     Attribute,
 )
 from ..session import session
+import re
 
 
 def get(project_id: str, record_id: str) -> Record:
@@ -32,7 +33,38 @@ def get_without_project_id(record_id: str) -> Record:
     return session.query(Record).filter(Record.id == record_id).first()
 
 
-def get_all(project_id: str) -> List[Record]:
+def get_all(project_id: str, sort_by: str = None) -> List[Record]:
+    if sort_by:
+        order = sort_by.split(" ")[1].upper() if " " in sort_by else "ASC"
+
+        # Order by record parameter
+        if re.split(":| ", sort_by)[0] in dir(Record):
+            # Order by json
+            if re.split(":| ", sort_by)[0] == 'data':
+                query = f"""
+                    SELECT *
+                    FROM record r
+                    WHERE r.project_id = '{project_id}'
+                    ORDER BY r.data ->> '{re.split(":| ", sort_by)[1]}' {order};
+                    """
+            else:
+                query = f"""
+                    SELECT *
+                    FROM record r
+                    WHERE r.project_id = '{project_id}'
+                    ORDER BY r.{re.split(":| ", sort_by)[0]} {order};
+                    """
+        # Order by model
+        elif sort_by.split(":")[0] == 'model':
+            query = f"""
+                SELECT r.*
+                FROM record r
+                JOIN record_label_association AS rla ON (r.id = rla.record_id)
+                WHERE r.project_id = '{project_id}'
+                AND rla.source_id = '{re.split(":| ", sort_by)[1]}'
+                ORDER BY rla.confidence {order};
+                """
+        return session.query(Record).from_statement(text(query)).all()
     return session.query(Record).filter(Record.project_id == project_id).all()
 
 
