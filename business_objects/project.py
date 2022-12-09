@@ -1,11 +1,11 @@
 from typing import List, Optional, Any, Dict, Union
 from sqlalchemy.sql import func
 
-from . import general
+import general
 
-from .. import enums
-from ..session import session
-from ..models import (
+import enums
+from session import session
+from models import (
     DataSliceRecordAssociation,
     LabelingTask,
     LabelingTaskLabel,

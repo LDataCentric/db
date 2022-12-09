@@ -3,10 +3,10 @@ from typing import List, Any
 
 from sqlalchemy import or_
 
-from . import general
-from .. import RecordTokenizationTask, enums
-from ..models import RecordAttributeTokenStatistics, RecordTokenized, Record
-from ..session import session
+import general
+import enums
+from models import RecordAttributeTokenStatistics, RecordTokenized, Record, RecordTokenizationTask
+from session import session
 
 
 def get_records_tokenized(

@@ -1,7 +1,7 @@
 from re import T
 import uuid
 
-from .enums import (
+from enums import (
     CascadeBehaviour,
     NotificationState,
     Tablenames,

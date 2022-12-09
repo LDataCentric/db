@@ -1,7 +1,7 @@
 from typing import List, Any
 
-from . import general
-from .. import enums
+import general
+import enums
 
 
 def get_current_inter_annotator_classification_users(

@@ -1,4 +1,3 @@
-import json
 import time
 from datetime import datetime
 from typing import List, Dict, Optional, Any, Tuple
@@ -6,16 +5,16 @@ from typing import List, Dict, Optional, Any, Tuple
 from sqlalchemy import or_
 from sqlalchemy.orm.session import make_transient
 
-from .. import enums
-from ..models import (
+import enums
+from models import (
     RecordLabelAssociation,
     RecordLabelAssociationToken,
     Record,
     LabelingTaskLabel,
     LabelingTask,
 )
-from ..session import session
-from ..business_objects import general, labeling_task_label, labeling_task, payload
+from session import session
+from business_objects import general, labeling_task_label, labeling_task, payload
 
 
 def get_all_with_filter(

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-from ..models import (
+from models import (
     LabelingTask,
     LabelingTaskLabel,
     RecordLabelAssociation,
@@ -9,9 +9,9 @@ from ..models import (
     RecordLabelAssociationToken,
 )
 
-from .. import enums
-from ..business_objects import general
-from ..session import session
+import enums
+from business_objects import general
+from session import session
 
 
 def get_task(project_id: str, ws_task_id: str) -> WeakSupervisionTask:

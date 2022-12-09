@@ -1,10 +1,10 @@
 from typing import List, Dict, Optional, Tuple, List, Any
 
-from . import general
-from ..business_objects import payload
-from .. import models, enums
-from ..models import LabelingTaskLabel, LabelingTask
-from ..session import session
+import general
+from business_objects import payload
+import models, enums
+from models import LabelingTaskLabel, LabelingTask
+from session import session
 
 
 def get_all_ids(project_id: str, labeling_task_id: str) -> List[Any]:

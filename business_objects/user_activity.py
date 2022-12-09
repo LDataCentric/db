@@ -1,9 +1,9 @@
 import traceback
 from typing import List, Any
 
-from .. import UserActivity
-from ..business_objects import general
-from ..session import session
+from models import UserActivity
+from business_objects import general
+from session import session
 
 
 def get_all_user_activity() -> List[Any]:

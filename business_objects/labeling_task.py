@@ -1,10 +1,10 @@
 from typing import Dict, List, Set, Any, Optional
 
-from . import general
-from .payload import get_base_query_valid_labels_manual
-from .. import models, enums
-from ..models import InformationSource, LabelingTask
-from ..session import session
+import general
+from payload import get_base_query_valid_labels_manual
+import models, enums
+from models import InformationSource, LabelingTask
+from session import session
 from sqlalchemy.sql.expression import cast
 import sqlalchemy
 

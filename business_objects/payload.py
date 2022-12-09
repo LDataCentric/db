@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import List, Optional
 
-from . import general
-from .. import enums
-from ..models import InformationSource, InformationSourcePayload
-from ..session import session
+import general
+import enums
+from models import InformationSourcePayload
+from session import session
 
 
 def get(project_id: str, payload_id: str) -> InformationSourcePayload:

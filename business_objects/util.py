@@ -1,5 +1,5 @@
 from datetime import datetime
-from submodules.model.business_objects import general
+from business_objects import general
 
 
 def set_values_on_item(item, **kwargs):

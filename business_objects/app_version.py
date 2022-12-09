@@ -1,8 +1,8 @@
 from typing import List, Optional
 from datetime import datetime
-from ..models import AppVersion
-from ..session import session
-from ..business_objects import general
+from models import AppVersion
+from session import session
+from business_objects import general
 
 
 def get_by_name(service: str) -> AppVersion:

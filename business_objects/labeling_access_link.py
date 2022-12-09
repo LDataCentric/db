@@ -1,8 +1,8 @@
 from datetime import datetime
-from submodules.model.models import InformationSource, LabelingAccessLink
-from . import general
-from .. import enums
-from ..session import session
+from models import LabelingAccessLink
+import general
+import enums
+from session import session
 from typing import Any, Dict, List, Optional
 from sqlalchemy import sql
 from sqlalchemy import or_, and_

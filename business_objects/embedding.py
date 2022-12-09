@@ -1,21 +1,21 @@
 from typing import List, Any, Optional
 from sqlalchemy import cast, TEXT
 
-from . import general
-from .. import models, EmbeddingTensor, Embedding
-from ..session import session
-from .. import enums
+import general
+import models
+from session import session
+import enums
 
 
-def get(project_id: str, embedding_id: str) -> Embedding:
+def get(project_id: str, embedding_id: str) -> models.Embedding:
     return (
-        session.query(Embedding)
-        .filter(Embedding.project_id == project_id, Embedding.id == embedding_id)
+        session.query(models.Embedding)
+        .filter(models.Embedding.project_id == project_id, models.Embedding.id == embedding_id)
         .first()
     )
 
 
-def get_first_running_encoder(project_id: str) -> Embedding:
+def get_first_running_encoder(project_id: str) -> models.Embedding:
     return (
         session.query(models.Embedding)
         .filter(
@@ -29,12 +29,12 @@ def get_first_running_encoder(project_id: str) -> Embedding:
 
 def get_embedding_record_ids(project_id: str) -> List[str]:
     ids: List[Any] = (
-        session.query(EmbeddingTensor.record_id)
+        session.query(models.EmbeddingTensor.record_id)
         .filter(
-            EmbeddingTensor.embedding_id == Embedding.id,
-            Embedding.project_id == project_id,
+            models.EmbeddingTensor.embedding_id == Embedding.id,
+            models.Embedding.project_id == project_id,
         )
-        .order_by(EmbeddingTensor.record_id)
+        .order_by(models.EmbeddingTensor.record_id)
         .distinct()
     )
     return [str(val) for val, in ids]
@@ -42,22 +42,22 @@ def get_embedding_record_ids(project_id: str) -> List[str]:
 
 def get_embedding_id_and_type(project_id: str, embedding_name: str) -> Any:
     return (
-        session.query(Embedding.id, Embedding.type)
-        .filter(Embedding.project_id == project_id, Embedding.name == embedding_name)
+        session.query(models.Embedding.id, models.Embedding.type)
+        .filter(models.Embedding.project_id == project_id, models.Embedding.name == embedding_name)
         .first()
     )
 
 
-def get_all_embeddings() -> List[Embedding]:
-    return session.query(Embedding).all()
+def get_all_embeddings() -> List[models.Embedding]:
+    return session.query(models.Embedding).all()
 
 
-def get_finished_embeddings(project_id: str) -> List[Embedding]:
+def get_finished_embeddings(project_id: str) -> List[models.Embedding]:
     return (
-        session.query(Embedding)
+        session.query(models.Embedding)
         .filter(
-            Embedding.project_id == project_id,
-            Embedding.state == enums.EmbeddingState.FINISHED.value,
+            models.Embedding.project_id == project_id,
+            models.Embedding.state == enums.EmbeddingState.FINISHED.value,
         )
         .all()
     )
@@ -65,10 +65,10 @@ def get_finished_embeddings(project_id: str) -> List[Embedding]:
 
 def get_finished_attribute_embeddings() -> List[Any]:
     return (
-        session.query(cast(Embedding.project_id, TEXT), cast(Embedding.id, TEXT))
+        session.query(cast(models.Embedding.project_id, TEXT), cast(models.Embedding.id, TEXT))
         .filter(
-            Embedding.state == enums.EmbeddingState.FINISHED.value,
-            Embedding.type == enums.EmbeddingType.ON_ATTRIBUTE.value,
+            models.Embedding.state == enums.EmbeddingState.FINISHED.value,
+            models.Embedding.type == enums.EmbeddingType.ON_ATTRIBUTE.value,
         )
         .all()
     )
@@ -187,7 +187,7 @@ def get_not_manually_labeled_tensors_by_embedding_id(
     return general.execute_all(query)
 
 
-def get_tensor_count(embedding_id: str) -> EmbeddingTensor:
+def get_tensor_count(embedding_id: str) -> models.EmbeddingTensor:
     return (
         session.query(models.EmbeddingTensor)
         .filter(models.EmbeddingTensor.embedding_id == embedding_id)
@@ -195,7 +195,7 @@ def get_tensor_count(embedding_id: str) -> EmbeddingTensor:
     )
 
 
-def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> EmbeddingTensor:
+def get_tensor(embedding_id: str, record_id: Optional[str] = None) -> models.EmbeddingTensor:
 
     query = session.query(models.EmbeddingTensor).filter(
         models.EmbeddingTensor.embedding_id == embedding_id,
@@ -214,8 +214,8 @@ def create(
     custom: bool = None,
     type: str = None,
     with_commit: bool = False,
-) -> Embedding:
-    embedding: Embedding = Embedding(
+) -> models.Embedding:
+    embedding: models.Embedding = models.Embedding(
         project_id=project_id,
         attribute_id=attribute_id,
         name=name,
@@ -240,8 +240,8 @@ def create_tensor(
     data: List[float],
     data_reduced: List[float],
     with_commit: bool = False,
-) -> EmbeddingTensor:
-    embedding_tensor: EmbeddingTensor = EmbeddingTensor(
+) -> models.EmbeddingTensor:
+    embedding_tensor: models.EmbeddingTensor = models.EmbeddingTensor(
         project_id=project_id,
         record_id=record_id,
         embedding_id=embedding_id,
@@ -261,7 +261,7 @@ def create_tensors(
     with_commit: bool = False,
 ) -> None:
     tensors = [
-        EmbeddingTensor(
+        models.EmbeddingTensor(
             project_id=project_id,
             record_id=record_id,
             embedding_id=embedding_id,
@@ -325,12 +325,12 @@ def __update_embedding_state(
 
 
 def delete(project_id: str, embedding_id: str, with_commit: bool = False) -> None:
-    session.query(Embedding).filter(
-        Embedding.project_id == project_id, Embedding.id == embedding_id
+    session.query(models.Embedding).filter(
+        models.Embedding.project_id == project_id, models.Embedding.id == embedding_id
     ).delete()
     general.flush_or_commit(with_commit)
 
 
 def delete_tensors(embedding_id: str, with_commit: bool = False) -> None:
-    session.query(EmbeddingTensor).filter(EmbeddingTensor.id == embedding_id).delete()
+    session.query(models.EmbeddingTensor).filter(models.EmbeddingTensor.id == embedding_id).delete()
     general.flush_or_commit(with_commit)

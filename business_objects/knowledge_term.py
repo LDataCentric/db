@@ -1,13 +1,13 @@
 from typing import Iterable, List, Any, Optional
 
-from . import general
-from ..models import KnowledgeTerm, KnowledgeBase
-from ..exceptions import (
+import general
+from models import KnowledgeTerm, KnowledgeBase
+from exceptions import (
     EntityAlreadyExistsException,
     EntityNotFoundException,
 )
-from ..session import session
-from ..business_objects import knowledge_base
+from session import session
+from business_objects import knowledge_base
 
 
 def get_by_value(knowledge_base_id: str, value: str) -> KnowledgeTerm:

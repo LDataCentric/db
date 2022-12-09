@@ -1,16 +1,16 @@
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-from submodules.model import enums
+import enums
 
-from . import general
-from .. import InformationSourceStatisticsExclusion
-from ..models import (
+import general
+from models import (
     InformationSource,
     InformationSourcePayload,
     InformationSourceStatistics,
+    InformationSourceStatisticsExclusion
 )
-from ..session import session
+from session import session
 
 
 def get(project_id: str, source_id: str) -> InformationSource:

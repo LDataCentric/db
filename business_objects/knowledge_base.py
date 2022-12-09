@@ -1,9 +1,9 @@
 from typing import List, List, Optional
 
-from ..models import KnowledgeBase
-from ..exceptions import EntityAlreadyExistsException, EntityNotFoundException
-from ..business_objects import knowledge_term, general
-from ..session import session
+from models import KnowledgeBase
+from exceptions import EntityAlreadyExistsException, EntityNotFoundException
+from business_objects import knowledge_term, general
+from session import session
 
 
 def get(project_id: str, base_id: str) -> KnowledgeBase:

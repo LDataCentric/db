@@ -1,8 +1,8 @@
 from typing import List, Any
 
-from ..session import session
-from ..models import UserSessions
-from ..business_objects import general
+from session import session
+from models import UserSessions
+from business_objects import general
 
 
 def get(project_id: str, session_id: str) -> UserSessions:

@@ -1,10 +1,10 @@
 from typing import List, Tuple, Any, Optional
 
-from . import general
-from .. import enums
-from ..business_objects.payload import get_base_query_valid_labels_manual
-from ..models import Attribute
-from . import user_session
+import general
+import enums
+from business_objects.payload import get_base_query_valid_labels_manual
+from models import Attribute
+import user_session
 
 OUTSIDE_CONSTANT = "OUTSIDE"
 

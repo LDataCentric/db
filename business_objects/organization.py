@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import List, Dict, Optional, Union
 
-from submodules.model import enums
+import enums
 
 
-from ..session import session
-from ..models import Organization, Project
-from ..business_objects import project, user, general
+from session import session
+from models import Organization, Project
+from business_objects import project, user, general
 
 
 def get(id: str) -> Organization:

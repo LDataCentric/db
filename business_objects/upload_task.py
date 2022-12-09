@@ -2,10 +2,10 @@ import datetime
 from typing import Optional
 
 
-from ..exceptions import EntityNotFoundException
-from ..session import session
-from ..models import UploadTask
-from ..business_objects import general
+from exceptions import EntityNotFoundException
+from session import session
+from models import UploadTask
+from business_objects import general
 
 
 def get(project_id: str, task_id: str) -> UploadTask:

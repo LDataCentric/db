@@ -2,14 +2,14 @@ from _operator import or_
 from datetime import datetime, timedelta
 from typing import List
 
-from . import general
-from .. import Notification, NotificationState, models, enums
-from ..session import session
+import general
+import models, enums
+from session import session
 
 
 def get_duplicated(
     project_id: str, notification_type: str, user_id: str
-) -> Notification:
+) -> models.Notification:
     return (
         session.query(models.Notification)
         .filter(
@@ -22,18 +22,18 @@ def get_duplicated(
     )
 
 
-def get_notifications_by_user_id(user_id: str) -> List[Notification]:
-    notifications: List[Notification] = (
-        session.query(Notification)
+def get_notifications_by_user_id(user_id: str) -> List[models.Notification]:
+    notifications: List[models.Notification] = (
+        session.query(models.Notification)
         .filter(
-            Notification.user_id == user_id,
-            Notification.state == NotificationState.INITIAL.value,
+            models.Notification.user_id == user_id,
+            models.Notification.state == enums.NotificationState.INITIAL.value,
         )
         .all()
     )
 
     for notification in notifications:
-        notification.state = NotificationState.NOT_INITIAL.value
+        notification.state = enums.NotificationState.NOT_INITIAL.value
     general.commit()
     return notifications
 
@@ -92,9 +92,9 @@ def create(
     level: str,
     notification_type: str,
     with_commit: bool = False,
-) -> Notification:
+) -> models.Notification:
 
-    notification: Notification = models.Notification(
+    notification: models.Notification = models.Notification(
         message=message,
         important=False,
         state=enums.NotificationState.INITIAL.value,

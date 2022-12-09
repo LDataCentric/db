@@ -2,10 +2,10 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import flag_modified
 
-from . import general
-from ..enums import AttributeState, DataTypes, RecordCategory
-from ..models import Attribute
-from ..session import session
+import general
+from enums import AttributeState, DataTypes, RecordCategory
+from models import Attribute
+from session import session
 
 
 def get(project_id: str, attribute_id: str) -> Attribute:

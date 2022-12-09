@@ -1,8 +1,8 @@
 from datetime import datetime
-from submodules.model.models import CommentData
-from . import general, organization
-from .. import User, enums
-from ..session import session
+from models import CommentData
+import general, organization
+import enums
+from session import session
 from typing import Dict, List, Any, Optional, Union
 
 
