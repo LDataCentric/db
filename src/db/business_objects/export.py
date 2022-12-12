@@ -11,6 +11,7 @@ OUTSIDE_CONSTANT = "OUTSIDE"
 def build_full_record_sql_export(
     project_id: str, attributes: List[Attribute], user_session_id: str
 ) -> str:
+
     select_part: str = ""
     for att in attributes:
         if select_part != "":
@@ -79,21 +80,36 @@ def __build_classification_part(project_id: str) -> Tuple[str, str]:
     columns_str_agg = ""
     label_case = ""
     select_add = ""
+
     for classification_task in classification_case:
         if columns_str_agg:
             columns_str_agg += ","
+
+        # Get Active Learning Names
+        active_learning_names = get_active_learning_names(project_id, classification_task.task_name)
+
         columns_str_agg += f"""
-string_agg({classification_task.col_name},', ') FILTER (WHERE source_type = '{enums.LabelSource.MANUAL.value}' AND vri_rla_id IS NOT NULL) AS {classification_task.col_name[:-1]}__{enums.LabelSource.MANUAL.value}\",
-string_agg({classification_task.col_name},', ') FILTER (WHERE source_type = '{enums.LabelSource.WEAK_SUPERVISION.value}') AS {classification_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}\",
-string_agg(confidence::TEXT,', ' ORDER BY record_id) FILTER (WHERE source_type = '{enums.LabelSource.WEAK_SUPERVISION.value}' AND {classification_task.col_name} IS NOT NULL ) AS {classification_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}__confidence\""""
+            string_agg({classification_task.col_name},', ') FILTER (WHERE source_type = '{enums.LabelSource.MANUAL.value}' AND vri_rla_id IS NOT NULL) AS {classification_task.col_name[:-1]}__{enums.LabelSource.MANUAL.value}\","""
+
+        for idx, name in enumerate(active_learning_names):
+            columns_str_agg += f"""
+                string_agg({classification_task.col_name},', ') FILTER (WHERE source_type = '{enums.LabelSource.INFORMATION_SOURCE.value}' AND name = '{name.name}') AS {classification_task.col_name[:-1]}__{name.name}\",
+                string_agg(confidence::TEXT,', ' ORDER BY record_id) FILTER (WHERE source_type = '{enums.LabelSource.INFORMATION_SOURCE.value}' AND {classification_task.col_name} IS NOT NULL AND name = '{name.name}') AS {classification_task.col_name[:-1]}__{name.name}__confidence\""""
+            if idx != len(active_learning_names) - 1:
+                columns_str_agg += ","
         if label_case:
             label_case += ",\n"
         label_case += classification_task.case_full
         if select_add:
             select_add += ",\n"
-        select_add += f"""{classification_task.col_name[:-1]}__{enums.LabelSource.MANUAL.value}\",            
-{classification_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}\",
-{classification_task.col_name[:-1]}__{enums.LabelSource.WEAK_SUPERVISION.value}__confidence\""""
+        select_add += f"""{classification_task.col_name[:-1]}__{enums.LabelSource.MANUAL.value}\","""
+
+        for idx, name in enumerate(active_learning_names):
+            select_add += f"""
+                {classification_task.col_name[:-1]}__{name.name}\",
+                {classification_task.col_name[:-1]}__{name.name}__confidence\""""
+            if idx != len(active_learning_names) - 1:
+                select_add += ","
 
     classification_sql = get_classification_labels(
         project_id, columns_str_agg, label_case
@@ -231,14 +247,17 @@ def get_classification_labels(
             rla.record_id, 
             rla.project_id,
             rla.source_type, 
+            _is.name,
             vri.rla_id vri_rla_id,
             ROUND(rla.confidence::numeric,4) confidence,
             {label_case}
         FROM record_label_association rla
         LEFT JOIN valid_rla_ids vri
             ON rla.id = vri.rla_id
+        LEFT JOIN information_source _is
+            ON rla.source_id = _is.id
         WHERE rla.return_type = '{enums.InformationSourceReturnType.RETURN.value}' AND rla.project_id = '{project_id}' 
-        AND rla.source_type IN ('{enums.LabelSource.MANUAL.value}','{enums.LabelSource.WEAK_SUPERVISION.value}')
+        AND rla.source_type IN ('{enums.LabelSource.MANUAL.value}','{enums.LabelSource.INFORMATION_SOURCE.value}')
         ) inner_sql
     GROUP BY record_id, project_id
     """
@@ -368,6 +387,17 @@ def get_case_classification(project_id: str) -> List[Any]:
                 ) mid_sql
         GROUP BY col_name 
         ) outer_sql
+    """
+    return general.execute_all(sql)
+
+def get_active_learning_names(project_id: str, task_name: str) -> List[Any]:
+    sql = f"""
+    SELECT DISTINCT _is.name
+    FROM information_source _is
+    JOIN labeling_task lt ON (lt.id = _is.labeling_task_id)
+    WHERE _is.type = '{enums.InformationSourceType.ACTIVE_LEARNING.value}'
+        AND _is.project_id = '{project_id}'
+        AND lt.name = '{task_name}'
     """
     return general.execute_all(sql)
 

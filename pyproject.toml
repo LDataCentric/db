@@ -7,10 +7,9 @@ readme = "README.md"
 packages = [{include = "db", from = "src"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4"
-sqlalchemy = "^1.4.44"
-psycopg2 = "^2.9.5"
-
+python = ">=3.9,<3.10"
+sqlalchemy = "1.4.25"
+psycopg2 = "2.9.1"
 
 [build-system]
 requires = ["poetry-core"]
