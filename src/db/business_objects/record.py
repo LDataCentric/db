@@ -41,11 +41,17 @@ def get_all(project_id: str, sort_by: str = None) -> List[Record]:
         if re.split(":| ", sort_by)[0] in dir(Record):
             # Order by json
             if re.split(":| ", sort_by)[0] == 'data':
+                data_type_query = f"""
+                    SELECT *
+                    FROM attribute a
+                    WHERE a.name = '{re.split(":| ", sort_by)[1]}' AND a.project_id = '{project_id}';
+                    """
+                data_type = session.query(Attribute).from_statement(text(data_type_query)).first()
                 query = f"""
                     SELECT *
                     FROM record r
                     WHERE r.project_id = '{project_id}'
-                    ORDER BY r.data ->> '{re.split(":| ", sort_by)[1]}' {order};
+                    ORDER BY (r.data ->> '{re.split(":| ", sort_by)[1]}')::{data_type.data_type} {order};
                     """
             else:
                 query = f"""
