@@ -269,6 +269,7 @@ def create(
     return_type: str,
     description: str,
     source_code: str,
+    embedding_id: Optional[str] = None,
     is_selected: Optional[bool] = None,
     version: Optional[int] = None,
     created_at: Optional[datetime] = None,
@@ -278,6 +279,7 @@ def create(
     information_source: InformationSource = InformationSource(
         project_id=project_id,
         labeling_task_id=labeling_task_id,
+        embedding_id=embedding_id,
         name=name,
         type=type,
         return_type=return_type,

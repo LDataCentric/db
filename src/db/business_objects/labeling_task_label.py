@@ -113,11 +113,16 @@ def get_labels_by_tasks(project_id: str) -> Dict[str, List[str]]:
 
 
 def get_classification_labels_manual(
-    project_id: str, labeling_task_id: str
+    project_id: str, labeling_task_id: str, include_ids: bool = False
 ) -> List[str]:
     query: str = payload.get_query_labels_classification_manual(
         project_id, labeling_task_id
     )
+    if include_ids:
+        return [
+            (record_id, label_name)
+            for record_id, label_name in general.execute_all(query)
+        ]
     return [label_name for _, label_name in general.execute_all(query)]
 
 

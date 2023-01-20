@@ -700,6 +700,11 @@ class InformationSource(Base):  # renamed from LabelFunction
         ForeignKey(f"{Tablenames.LABELING_TASK.value}.id", ondelete="CASCADE"),
         index=True,
     )
+    embedding_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
     # e.g. LABELING_FUNCTION, ACTIVE_LEARNING_MODEL, API, ...
     type = Column(String)
     return_type = Column(String)  # e.g. RETURN, YIELD
@@ -729,6 +734,26 @@ class InformationSource(Base):  # renamed from LabelFunction
         Tablenames.INFORMATION_SOURCE,
         Tablenames.RECORD_LABEL_ASSOCIATION,
     )
+
+
+class Model(Base):
+    __tablename__ = Tablenames.MODEL.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    information_source_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.INFORMATION_SOURCE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
+    created_at = Column(DateTime, default=sql.func.now())
+    name = Column(String)
+    pycaret_type = Column(String)
+    version = Column(Integer, default=1)
+    metrics = Column(JSON)
+    time = Column(Float)
+    location = Column(String)
+    # fine_tuned = Column(Boolean, default=False)
 
 
 class InformationSourceStatistics(Base):
