@@ -114,6 +114,7 @@ class Tablenames(Enum):
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
     COMMENT_DATA = "comment_data"
     LABELING_ACCESS_LINK = "labeling_access_link"
+    LAYOUT = "layout"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs

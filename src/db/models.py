@@ -290,6 +290,26 @@ class UploadTask(Base):
     file_import_options = Column(String)
 
 
+# -------------------- LAYOUT --------------------
+class Layout(Base):
+    __tablename__ = Tablenames.LAYOUT.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    layout_type = Column(String)
+    columns = Column(JSON)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
 # -------------------- PROJECT_ --------------------
 class Project(Base):
     __tablename__ = Tablenames.PROJECT.value
