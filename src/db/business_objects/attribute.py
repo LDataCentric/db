@@ -145,6 +145,7 @@ def create(
     name: str,
     relative_position: int,
     data_type: str = DataTypes.CATEGORY.value,
+    info: Optional[dict] = None,
     is_primary_key: bool = False,
     user_created: bool = False,
     source_code: Optional[str] = None,
@@ -155,6 +156,7 @@ def create(
     attribute: Attribute = Attribute(
         project_id=project_id,
         name=name,
+        info=info,
         data_type=data_type,
         is_primary_key=is_primary_key,
         relative_position=relative_position,
@@ -180,6 +182,7 @@ def update(
     data_type: Optional[str] = None,
     is_primary_key: Optional[bool] = None,
     name: Optional[str] = None,
+    info: Optional[dict] = None,
     source_code: Optional[str] = None,
     state: Optional[str] = None,
     logs: Optional[List[str]] = None,
@@ -196,6 +199,8 @@ def update(
         attribute.source_code = source_code
     if state is not None:
         attribute.state = state
+    if info is not None:
+        attribute.info = info
     if logs is not None:
         attribute.logs = logs
         flag_modified(attribute, "logs")

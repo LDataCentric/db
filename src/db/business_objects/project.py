@@ -187,14 +187,18 @@ def create(
     name: str,
     description: str,
     created_by: str,
+    tokenizer: Optional[str] = None,
     created_at: Optional[str] = None,
     with_commit: bool = False,
     status: enums.ProjectStatus = enums.ProjectStatus.INIT_UPLOAD,
 ) -> Project:
+
     project: Project = Project(
         name=name,
         description=description,
         organization_id=organization_id,
+        tokenizer=tokenizer,
+        tokenizer_blank = tokenizer[:2] if tokenizer else None,
         created_by=created_by,
         created_at=created_at,
         status=status.value,

@@ -1,12 +1,25 @@
 from enum import Enum
 
+
 class FileExtensions(Enum):
     """
     Enum for file extensions
     """
-    AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'aiff', 'alac']
-    IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tiff', 'tif', 'svg']
-    VIDEO_EXTENSIONS = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'vob', 'ogv']
+
+    AUDIO_EXTENSIONS = [
+        "mp3",
+        "wav",
+        "ogg",
+        "flac",
+        "aac",
+        "m4a",
+        "wma",
+        "aiff",
+        "alac",
+    ]
+    IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "gif", "tiff", "tif", "svg"]
+    VIDEO_EXTENSIONS = ["mp4", "avi", "mov", "wmv", "flv", "mkv", "webm", "vob", "ogv"]
+
 
 class DataTypes(Enum):
     INTEGER = "INTEGER"
@@ -19,6 +32,7 @@ class DataTypes(Enum):
     AUDIO = "AUDIO"
     IMAGE = "IMAGE"
     VIDEO = "VIDEO"
+    DATE = "DATE"
 
 
 class ProjectStatus(Enum):
@@ -114,6 +128,7 @@ class Tablenames(Enum):
     INFORMATION_SOURCE_STATISTICS_EXCLUSION = "information_source_statistics_exclusion"
     COMMENT_DATA = "comment_data"
     LABELING_ACCESS_LINK = "labeling_access_link"
+    UPLOAD = "upload"
     LAYOUT = "layout"
 
     def snake_case_to_pascal_case(self):

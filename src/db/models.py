@@ -310,6 +310,25 @@ class Layout(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
+# -------------------- UPLOAD --------------------
+class Upload(Base):
+    __tablename__ = Tablenames.UPLOAD.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    location = Column(String)
+    info = Column(JSON)
+    created_at = Column(DateTime, default=sql.func.now())
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+
 # -------------------- PROJECT_ --------------------
 class Project(Base):
     __tablename__ = Tablenames.PROJECT.value
@@ -382,6 +401,7 @@ class Attribute(Base):
     relative_position = Column(Integer)
     user_created = Column(Boolean, default=False)
     source_code = Column(String)
+    info = Column(JSON)
     state = Column(String, default=AttributeState.UPLOADED.value)
     logs = Column(ARRAY(String))
 
