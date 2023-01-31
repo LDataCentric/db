@@ -11,12 +11,11 @@ from db.models import (
 )
 
 
-def get(project_id: str, user_id: str, layout_type: str) -> Layout:
+def get(layout_id: str, user_id: str) -> Layout:
     return (
         session.query(Layout)
         .filter(
-            Layout.project_id == project_id,
-            Layout.layout_type == layout_type,
+            Layout.id == layout_id,
             Layout.user_id == user_id,
         )
         .first()
@@ -71,7 +70,6 @@ def delete(layout_id: str, with_commit: bool = False) -> None:
 def update(
     layout_id: str,
     name: Optional[str] = None,
-    layout_type: Optional[str] = None,
     columns: Optional[dict] = None,
     with_commit: bool = False,
 ) -> Layout:
@@ -79,9 +77,6 @@ def update(
 
     if name is not None:
         layout.name = name
-
-    if layout_type is not None:
-        layout.layout_type = layout_type
 
     if columns is not None:
         layout.columns = columns
