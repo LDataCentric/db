@@ -322,6 +322,7 @@ class Upload(Base):
     name = Column(String)
     location = Column(String)
     info = Column(JSON)
+    configuration = Column(JSON)
     created_at = Column(DateTime, default=sql.func.now())
     user_id = Column(
         UUID(as_uuid=True),
@@ -792,7 +793,6 @@ class InformationSourceStatistics(Base):
     true_positives = Column(Integer)
     false_positives = Column(Integer)
     false_negatives = Column(Integer)
-    f1_score = Column(Float)
     record_coverage = Column(Integer)
     total_hits = Column(Integer)
     source_conflicts = Column(Integer)
