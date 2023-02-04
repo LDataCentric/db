@@ -438,6 +438,7 @@ def update_quality_stats(
             statistics.true_positives = stats_dict["true_positives"]
             statistics.false_positives = stats_dict["false_positives"]
             statistics.false_negatives = stats_dict["false_negatives"]
+            statistics.f1_score = statistics.true_positives / (statistics.true_positives + 0.5 * (statistics.false_positives + statistics.false_negatives))
     general.flush_or_commit(with_commit)
 
 

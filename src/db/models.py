@@ -792,6 +792,7 @@ class InformationSourceStatistics(Base):
     true_positives = Column(Integer)
     false_positives = Column(Integer)
     false_negatives = Column(Integer)
+    f1_score = Column(Float)
     record_coverage = Column(Integer)
     total_hits = Column(Integer)
     source_conflicts = Column(Integer)
