@@ -1,5 +1,5 @@
 from __future__ import with_statement
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Hashable
 from sqlalchemy import cast, Text, text
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -40,13 +40,17 @@ def get_all(project_id: str, sort_by: str = None) -> List[Record]:
         # Order by record parameter
         if re.split(":| ", sort_by)[0] in dir(Record):
             # Order by json
-            if re.split(":| ", sort_by)[0] == 'data':
+            if re.split(":| ", sort_by)[0] == "data":
                 data_type_query = f"""
                     SELECT *
                     FROM attribute a
                     WHERE a.name = '{re.split(":| ", sort_by)[1]}' AND a.project_id = '{project_id}';
                     """
-                data_type = session.query(Attribute).from_statement(text(data_type_query)).first()
+                data_type = (
+                    session.query(Attribute)
+                    .from_statement(text(data_type_query))
+                    .first()
+                )
                 query = f"""
                     SELECT *
                     FROM record r
@@ -61,7 +65,7 @@ def get_all(project_id: str, sort_by: str = None) -> List[Record]:
                     ORDER BY r.{re.split(":| ", sort_by)[0]} {order};
                     """
         # Order by model
-        elif sort_by.split(":")[0] == 'model':
+        elif sort_by.split(":")[0] == "model":
             query = f"""
                 SELECT r.*
                 FROM record r
@@ -414,7 +418,7 @@ def create(
 
 def create_records(
     project_id: str,
-    records_data: List[Dict[str, Any]],
+    records_data: List[Dict[Hashable, Any]],
     category: str,
     with_commit: bool = False,
 ) -> List[Record]:
@@ -508,7 +512,10 @@ def delete(project_id: str, record_id: str, with_commit: bool = False) -> None:
     )
     general.flush_or_commit(with_commit)
 
-def delete_records(project_id: str, record_ids: List[str], with_commit: bool = False) -> None:
+
+def delete_records(
+    project_id: str, record_ids: List[str], with_commit: bool = False
+) -> None:
     session.query(Record).filter(
         Record.project_id == project_id, Record.id.in_(record_ids)
     ).delete(synchronize_session=False)

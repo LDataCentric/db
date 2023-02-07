@@ -219,8 +219,8 @@ def create_labels(
     ]
 
     for task_name in labels_data:
-        if not labels_data.get(task_name):
-            continue
+        # if not labels_data.get(task_name):
+        #     continue
 
         for idx, labeling_task_label_name in enumerate(labels_data.get(task_name)):
             if labeling_task_label_name is None:

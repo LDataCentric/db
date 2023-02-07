@@ -210,7 +210,7 @@ def create_multiple(
     attribute_ids: Dict,
     tasks_data: Dict[str, Any],
     with_commit: bool = False,
-) -> None:
+) -> dict[str, str]:
     tasks: List = []
     for task_name in tasks_data:
         attribute_id: str = attribute_ids.get(
@@ -220,13 +220,15 @@ def create_multiple(
             name=task_name,
             project_id=project_id,
             attribute_id=attribute_id or None,
-            task_target=enums.LabelingTaskTarget.ON_WHOLE_RECORD.value
-            if not attribute_id
-            else enums.LabelingTaskTarget.ON_ATTRIBUTE.value,
+            task_target=enums.LabelingTaskTarget.ON_ATTRIBUTE.value
+            if attribute_id
+            else enums.LabelingTaskTarget.ON_WHOLE_RECORD.value,
             task_type=enums.LabelingTaskType.CLASSIFICATION.value,
         )
         tasks.append(labeling_task)
     general.add_all(tasks, with_commit)
+
+    return {task.name: task.id for task in tasks}
 
 
 def update(
