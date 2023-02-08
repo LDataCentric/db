@@ -155,6 +155,7 @@ def get_latest(project_id: str, top_n: int) -> List[RecordLabelAssociation]:
         .all()
     )
 
+
 def get_by_source_type(
     project_id: str, source_type: str
 ) -> List[RecordLabelAssociation]:
@@ -401,7 +402,7 @@ def create_gold_extraction_association(
 
 def create_record_label_associations(
     records: List[Record],
-    labels_data: List[Dict[str, Any]],
+    labels_data: Dict[str, Any],
     project_id: str,
     user_id: str,
     with_commit: bool = False,
@@ -409,20 +410,36 @@ def create_record_label_associations(
     joined_labeling_tasks_and_labels = (
         labeling_task_label.get_label_ids_by_task_and_label_name(project_id)
     )
-    for record, label_data_entry in zip(records, labels_data):
-        rlas = [
-            RecordLabelAssociation(
+    rlas = []
+    for label_task_name, label_data_entry in labels_data.items():
+        for record, label_name in zip(records, label_data_entry):
+            if label_name not in joined_labeling_tasks_and_labels.get(label_task_name):
+                continue
+            labeling_task_label_id = joined_labeling_tasks_and_labels.get(
+                label_task_name
+            ).get(label_name)
+            rla = RecordLabelAssociation(
                 project_id=project_id,
                 record_id=record.id,
-                labeling_task_label_id=joined_labeling_tasks_and_labels.get(
-                    label_task_name,
-                ).get(label_name),
+                labeling_task_label_id=labeling_task_label_id,
                 source_type=enums.LabelSource.MANUAL.value,
                 return_type=enums.InformationSourceReturnType.RETURN.value,
                 created_by=user_id,
             )
-            for label_task_name, label_name in label_data_entry.items()
-        ]
+            rlas.append(rla)
+        # rlas = [
+        #     RecordLabelAssociation(
+        #         project_id=project_id,
+        #         record_id=record.id,
+        #         labeling_task_label_id=joined_labeling_tasks_and_labels.get(
+        #             label_task_name,
+        #         ).get(label_name),
+        #         source_type=enums.LabelSource.MANUAL.value,
+        #         return_type=enums.InformationSourceReturnType.RETURN.value,
+        #         created_by=user_id,
+        #     )
+        #     for label_task_name, label_name in label_data_entry.items()
+        # ]
         general.add_all(rlas, with_commit)
 
 
