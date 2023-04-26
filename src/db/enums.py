@@ -130,6 +130,11 @@ class Tablenames(Enum):
     LABELING_ACCESS_LINK = "labeling_access_link"
     UPLOAD = "upload"
     LAYOUT = "layout"
+    MODEL = "model"
+    MODEL_ATTRIBUTES = "model_attributes"
+    PAYLOAD = "payload"
+    TRAINING = "training"
+    DATALOAD = "dataload"
 
     def snake_case_to_pascal_case(self):
         # the type name of a table is needed to create backrefs

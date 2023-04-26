@@ -2,11 +2,13 @@ from typing import List, Tuple, Any, Optional
 
 from db.business_objects import general
 import db.enums as enums
-from db.business_objects.payload import get_base_query_valid_labels_manual
+
+# from db.business_objects.payload import get_base_query_valid_labels_manual
 from db.models import Attribute
 from db.business_objects import user_session
 
 OUTSIDE_CONSTANT = "OUTSIDE"
+
 
 def build_full_record_sql_export(
     project_id: str, attributes: List[Attribute], user_session_id: str
@@ -86,7 +88,9 @@ def __build_classification_part(project_id: str) -> Tuple[str, str]:
             columns_str_agg += ","
 
         # Get Active Learning Names
-        active_learning_names = get_active_learning_names(project_id, classification_task.task_name)
+        active_learning_names = get_active_learning_names(
+            project_id, classification_task.task_name
+        )
 
         columns_str_agg += f"""
             string_agg({classification_task.col_name},', ') FILTER (WHERE source_type = '{enums.LabelSource.MANUAL.value}' AND vri_rla_id IS NOT NULL) AS {classification_task.col_name[:-1]}__{enums.LabelSource.MANUAL.value}\","""
@@ -181,40 +185,41 @@ def get_final_sql(
     user_session_part: str = "",
     order_by_part: str = "",
 ) -> str:
-    base_query_manual = get_base_query_valid_labels_manual(project_id)
-    select_part = select_part.replace("\n", "\n        ")
-    classification_part = classification_part.replace("\n", "\n        ")
-    extraction_part = extraction_part.replace("\n", "\n        ")
+    pass
+    # base_query_manual = get_base_query_valid_labels_manual(project_id)
+    # select_part = select_part.replace("\n", "\n        ")
+    # classification_part = classification_part.replace("\n", "\n        ")
+    # extraction_part = extraction_part.replace("\n", "\n        ")
 
-    if classification_part:
-        classification_part = f"""LEFT JOIN (
-        {classification_part}
-    ) label_data_classification
-    ON r.id = label_data_classification.record_id AND r.project_id = label_data_classification.project_id
-        """
+    # if classification_part:
+    #     classification_part = f"""LEFT JOIN (
+    #     {classification_part}
+    # ) label_data_classification
+    # ON r.id = label_data_classification.record_id AND r.project_id = label_data_classification.project_id
+    #     """
 
-    if extraction_part:
-        extraction_part = f"""
-    INNER JOIN (
-        {extraction_part}
-    ) label_data_extraction
-    ON r.id = label_data_extraction.record_id AND r.project_id = label_data_extraction.project_id
-        """
-    if not order_by_part:
-        order_by_part = "1"
-    return (
-        base_query_manual
-        + f"""
-        
-        SELECT 
-            {select_part}
-        FROM {__get_from_part(user_session_part)}
-        {classification_part}
-        {extraction_part}
-        WHERE r.project_id = '{project_id}'
-        ORDER BY {order_by_part}
-        """
-    )
+    # if extraction_part:
+    #     extraction_part = f"""
+    # INNER JOIN (
+    #     {extraction_part}
+    # ) label_data_extraction
+    # ON r.id = label_data_extraction.record_id AND r.project_id = label_data_extraction.project_id
+    #     """
+    # if not order_by_part:
+    #     order_by_part = "1"
+    # return (
+    #     base_query_manual
+    #     + f"""
+
+    #     SELECT
+    #         {select_part}
+    #     FROM {__get_from_part(user_session_part)}
+    #     {classification_part}
+    #     {extraction_part}
+    #     WHERE r.project_id = '{project_id}'
+    #     ORDER BY {order_by_part}
+    #     """
+    # )
 
 
 def get_case_information_extraction(project_id: str) -> List[Any]:
@@ -389,6 +394,7 @@ def get_case_classification(project_id: str) -> List[Any]:
         ) outer_sql
     """
     return general.execute_all(sql)
+
 
 def get_active_learning_names(project_id: str, task_name: str) -> List[Any]:
     sql = f"""

@@ -61,7 +61,7 @@ def get_query_labels_classification_manual(
         + f"""
     SELECT e.record_id,rla.name
     FROM (
-        SELECT record_id 
+        SELECT record_id
         FROM embedding e
         INNER JOIN embedding_tensor et
             ON e.id = et.embedding_id
@@ -73,9 +73,9 @@ def get_query_labels_classification_manual(
         INNER JOIN record_label_association rla
             ON rla.id = vri.rla_id
         INNER JOIN labeling_task_label ltl
-            ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id 
+            ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id
             AND rla.project_id = '{project_id}' AND ltl.project_id = '{project_id}'
-        WHERE rla.source_type = '{enums.LabelSource.MANUAL.value}' 
+        WHERE rla.source_type = '{enums.LabelSource.MANUAL.value}'
             AND ltl.labeling_task_id = '{labeling_task_id}' ) rla
     ON e.record_id = rla.record_id
     ORDER BY e.record_id
@@ -161,16 +161,16 @@ def get_base_query_valid_labels_manual(
     if record_id:
         record_id_add = f"AND rla.record_id = '{record_id}'"
     query = f"""
-    WITH valid_rla_ids AS(    
+    WITH valid_rla_ids AS(
         SELECT rla.id rla_id
         FROM record_label_association rla
         INNER JOIN labeling_task_label ltl
-            ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id 
-        WHERE rla.is_valid_manual_label = TRUE 
-            AND rla.source_type = '{enums.LabelSource.MANUAL.value}' 
-            AND rla.project_id = '{project_id}' AND ltl.project_id = '{project_id}' 
-        {labeling_task_add} 
-        {record_id_add} 
+            ON rla.labeling_task_label_id = ltl.id AND ltl.project_id = rla.project_id
+        WHERE rla.is_valid_manual_label = TRUE
+            AND rla.source_type = '{enums.LabelSource.MANUAL.value}'
+            AND rla.project_id = '{project_id}' AND ltl.project_id = '{project_id}'
+        {labeling_task_add}
+        {record_id_add}
 	)
     """
     return query
@@ -185,7 +185,7 @@ def get_query_max_token(
     query = f"""
     SELECT rats.record_id::TEXT record_id, rats.num_token
     FROM record_attribute_token_statistics rats
-    INNER JOIN attribute a 
+    INNER JOIN attribute a
         ON rats.attribute_id = a.id
     INNER JOIN labeling_task lt
         ON a.id = lt.attribute_id

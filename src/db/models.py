@@ -310,6 +310,125 @@ class Layout(Base):
     created_at = Column(DateTime, default=sql.func.now())
 
 
+# -------------------- MODEL --------------------
+class Model(Base):
+    __tablename__ = Tablenames.MODEL.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PROJECT.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    target_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ATTRIBUTE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    name = Column(String)
+    description = Column(String)
+    metric = Column(String)
+    algorithms = Column(JSON)
+    created_at = Column(DateTime, default=sql.func.now())
+
+    attributes = parent_to_child_relationship(
+        Tablenames.MODEL,
+        Tablenames.MODEL_ATTRIBUTES,
+    )
+
+    dataloads = parent_to_child_relationship(
+        Tablenames.MODEL,
+        Tablenames.DATALOAD,
+    )
+
+
+# -------------------- MODEL ATTRIBUTES --------------------
+class ModelAttributes(Base):
+    __tablename__ = Tablenames.MODEL_ATTRIBUTES.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    model_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.MODEL.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    attribute_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.ATTRIBUTE.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    embedding_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.EMBEDDING.value}.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+    # Define relationships to related tables
+    # model = relationship("Model", back_populates="model_attributes")
+    # attribute = relationship(Tablenames.ATTRIBUTE.snake_case_to_pascal_case(),
+    #                          back_populates="model_attributes")
+    # embedding = relationship("Embedding", back_populates="model_attributes")
+
+    # relationship(
+    #         other_table.snake_case_to_pascal_case(),
+    #         backref=backref(
+    #             this_table.snake_case_to_camel_case(),
+    #         ),
+    #         cascade="delete,all",
+    #         order_by=order_by,
+    #     )
+
+    # attribute = parent_to_child_relationship(
+    #     Tablenames.MODEL_ATTRIBUTES,
+    #     Tablenames.ATTRIBUTE,
+    # )
+
+    # embedding = parent_to_child_relationship(
+    #     Tablenames.MODEL_ATTRIBUTES,
+    #     Tablenames.EMBEDDING,
+    # )
+
+
+# -------------------- PAYLOAD --------------------
+class Dataload(Base):
+    __tablename__ = Tablenames.PAYLOAD.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    location = Column(String, nullable=True)
+    model_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.MODEL.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    created_at = Column(DateTime, default=sql.func.now())
+
+
+# -------------------- TRAINING --------------------
+class Training(Base):
+    __tablename__ = Tablenames.TRAINING.value
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    model_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.MODEL.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    payload_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(f"{Tablenames.PAYLOAD.value}.id", ondelete="CASCADE"),
+        index=True,
+    )
+    algorithm = Column(String)
+    metrics = Column(JSON)
+    statistics = Column(JSON)
+    time = Column(Float)
+    location = Column(String)
+    created_at = Column(DateTime, default=sql.func.now())
+
+
 # -------------------- UPLOAD --------------------
 class Upload(Base):
     __tablename__ = Tablenames.UPLOAD.value
@@ -329,6 +448,7 @@ class Upload(Base):
         ForeignKey(f"{Tablenames.USER.value}.id", ondelete="CASCADE"),
         index=True,
     )
+
 
 # -------------------- PROJECT_ --------------------
 class Project(Base):
@@ -386,6 +506,10 @@ class Project(Base):
         Tablenames.PROJECT,
         Tablenames.DATA_SLICE,
     )
+    models = parent_to_child_relationship(
+        Tablenames.PROJECT,
+        Tablenames.MODEL,
+    )
 
 
 class Attribute(Base):
@@ -399,6 +523,8 @@ class Attribute(Base):
     name = Column(String)
     data_type = Column(String)
     is_primary_key = Column(Boolean, default=False)
+    is_categorical = Column(Boolean, default=False)
+    is_target = Column(Boolean, default=False)
     relative_position = Column(Integer)
     user_created = Column(Boolean, default=False)
     source_code = Column(String)
@@ -414,6 +540,16 @@ class Attribute(Base):
     labeling_tasks = parent_to_child_relationship(
         Tablenames.ATTRIBUTE,
         Tablenames.LABELING_TASK,
+    )
+
+    model_attributes = parent_to_child_relationship(
+        Tablenames.ATTRIBUTE,
+        Tablenames.MODEL_ATTRIBUTES,
+    )
+
+    model = parent_to_child_relationship(
+        Tablenames.ATTRIBUTE,
+        Tablenames.MODEL,
     )
 
 

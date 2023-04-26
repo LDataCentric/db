@@ -1,6 +1,7 @@
 from typing import Dict, List, Set, Any, Optional
 
 from db.business_objects import general
+
 from db.business_objects.payload import get_base_query_valid_labels_manual
 import db.models as models, db.enums as enums
 from db.models import InformationSource, LabelingTask
@@ -107,7 +108,7 @@ def get_relevant_extraction_records(project_id: str, task_id: str) -> List[str]:
     query: str = (
         base_query
         + f"""
-            SELECT rla.record_id::TEXT 
+            SELECT rla.record_id::TEXT
             FROM valid_rla_ids vri
             INNER JOIN record_label_association rla
                 ON vri.rla_id = rla.id
@@ -134,7 +135,7 @@ def get_record_extraction_vector_triplets_manual(
         INNER JOIN labeling_task_label ltl
             ON rla.labeling_task_label_id = ltl.id AND rla.project_id = ltl.project_id
         INNER JOIN labeling_task lt
-            ON ltl.labeling_task_id = lt.id AND ltl.project_id = lt.project_id         
+            ON ltl.labeling_task_id = lt.id AND ltl.project_id = lt.project_id
         INNER JOIN attribute a
             ON lt.attribute_id = a.id AND lt.project_id = a.project_id
         INNER JOIN record_label_association_token rlat

@@ -13,7 +13,9 @@ def get_request_id():
 
 
 engine = create_engine(os.getenv("POSTGRES"), pool_size=20)
-# engine = create_engine('postgresql://postgres:onetask@localhost:7052/postgres', pool_size=20)
+# engine = create_engine(
+#     "postgresql://postgres:onetask@localhost:7052/postgres", pool_size=20
+# )
 
 session = scoped_session(
     sessionmaker(autocommit=False, autoflush=True, bind=engine),

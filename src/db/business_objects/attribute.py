@@ -147,6 +147,8 @@ def create(
     data_type: str = DataTypes.CATEGORY.value,
     info: Optional[dict] = None,
     is_primary_key: bool = False,
+    is_categorical: bool = False,
+    is_target: bool = False,
     user_created: bool = False,
     source_code: Optional[str] = None,
     state: Optional[str] = None,
@@ -159,6 +161,8 @@ def create(
         info=info,
         data_type=data_type,
         is_primary_key=is_primary_key,
+        is_categorical=is_categorical,
+        is_target=is_target,
         relative_position=relative_position,
         user_created=user_created,
     )
