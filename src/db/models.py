@@ -345,6 +345,11 @@ class Model(Base):
         Tablenames.DATALOAD,
     )
 
+    trainings = parent_to_child_relationship(
+        Tablenames.MODEL,
+        Tablenames.TRAINING,
+    )
+
 
 # -------------------- MODEL ATTRIBUTES --------------------
 class ModelAttributes(Base):
@@ -405,6 +410,11 @@ class Dataload(Base):
         index=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
+
+    trainings = parent_to_child_relationship(
+        Tablenames.PAYLOAD,
+        Tablenames.TRAINING,
+    )
 
 
 # -------------------- TRAINING --------------------
