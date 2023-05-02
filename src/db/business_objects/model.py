@@ -37,6 +37,7 @@ def create(
     description: str,
     metric: str,
     algorithms: dict,
+    active_algorithm: Optional[str] = None,
     created_at: Optional[str] = None,
     with_commit: bool = False,
 ) -> Model:
@@ -49,6 +50,7 @@ def create(
         description=description,
         metric=metric,
         algorithms=algorithms,
+        active_algorithm=active_algorithm,
         created_at=created_at,
     )
     general.add(model, with_commit)
@@ -68,6 +70,7 @@ def update(
     description: Optional[str] = None,
     metric: Optional[str] = None,
     algorithms: Optional[dict] = None,
+    active_algorithm: Optional[str] = None,
     with_commit: bool = False,
 ) -> Model:
     model: Model = session.query(Model).get(model_id)
@@ -83,6 +86,9 @@ def update(
 
     if algorithms is not None:
         model.algorithms = algorithms
+
+    if active_algorithm is not None:
+        model.active_algorithm = active_algorithm
 
     general.flush_or_commit(with_commit)
     return model

@@ -334,6 +334,7 @@ class Model(Base):
     metric = Column(String)
     algorithms = Column(JSON)
     created_at = Column(DateTime, default=sql.func.now())
+    active_algorithm = Column(String)
 
     attributes = parent_to_child_relationship(
         Tablenames.MODEL,
@@ -372,31 +373,6 @@ class ModelAttributes(Base):
         nullable=True,
     )
     created_at = Column(DateTime, default=sql.func.now())
-
-    # Define relationships to related tables
-    # model = relationship("Model", back_populates="model_attributes")
-    # attribute = relationship(Tablenames.ATTRIBUTE.snake_case_to_pascal_case(),
-    #                          back_populates="model_attributes")
-    # embedding = relationship("Embedding", back_populates="model_attributes")
-
-    # relationship(
-    #         other_table.snake_case_to_pascal_case(),
-    #         backref=backref(
-    #             this_table.snake_case_to_camel_case(),
-    #         ),
-    #         cascade="delete,all",
-    #         order_by=order_by,
-    #     )
-
-    # attribute = parent_to_child_relationship(
-    #     Tablenames.MODEL_ATTRIBUTES,
-    #     Tablenames.ATTRIBUTE,
-    # )
-
-    # embedding = parent_to_child_relationship(
-    #     Tablenames.MODEL_ATTRIBUTES,
-    #     Tablenames.EMBEDDING,
-    # )
 
 
 # -------------------- PAYLOAD --------------------
